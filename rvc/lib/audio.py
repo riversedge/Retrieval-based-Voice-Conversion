@@ -5,10 +5,11 @@ from io import BytesIO
 import av
 import librosa
 import numpy as np
+import subprocess
 
 
 def wav2(i, o, format):
-    inp = av.open(i, "rb")
+    inp = av.open(i, "r")
     if format == "m4a":
         format = "mp4"
     out = av.open(o, "wb", format=format)
@@ -31,8 +32,8 @@ def wav2(i, o, format):
 
 
 def audio2(i, o, format, sr):
-    inp = av.open(i, "rb")
-    out = av.open(o, "wb", format=format)
+    inp = av.open(i, "r")
+    out = av.open(o, "w", format=format)
     if format == "ogg":
         format = "libvorbis"
     if format == "f32le":
@@ -50,6 +51,39 @@ def audio2(i, o, format, sr):
 
 
 def load_audio(file, sr):
+    if not os.path.exists(file):
+        raise RuntimeError(
+            "You input a wrong audio path that does not exists, please fix it!"
+        )
+
+    try:
+        # Decode audio with ffmpeg -> raw float32 mono at target sample rate.
+        # This avoids PyAV API differences (your current audio2() path is breaking).
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-i", str(file),
+            "-f", "f32le",
+            "-acodec", "pcm_f32le",
+            "-ac", "1",
+            "-ar", str(sr),
+            "pipe:1",
+        ]
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if p.returncode != 0:
+            raise RuntimeError(p.stderr.decode(errors="ignore"))
+
+        audio = np.frombuffer(p.stdout, np.float32).flatten()
+        if audio.size == 0:
+            raise RuntimeError("ffmpeg returned empty audio buffer")
+        return audio
+
+    except Exception:
+        # Keep existing behavior of surfacing a full traceback
+        raise RuntimeError(traceback.format_exc())
+
+def load_audio_old(file, sr):
     if not os.path.exists(file):
         raise RuntimeError(
             "You input a wrong audio path that does not exists, please fix it!"

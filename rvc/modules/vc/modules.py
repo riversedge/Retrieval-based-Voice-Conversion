@@ -124,6 +124,7 @@ class VC:
         elif not isinstance(input_audio_path, str):
             raise RuntimeError(f"pathlib.Path or str expected for input_audio_path. Got {type(input_audio_path)}")
         
+        print("DEBUG input_audio_path:", repr(input_audio_path), type(input_audio_path))
         if not os.path.exists(input_audio_path):
             raise FileNotFoundError("input_audio_path not found.")
         

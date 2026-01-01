@@ -112,13 +112,17 @@ def infer(
     load_dotenv()
     vc = VC()
     vc.get_vc(modelpath)
+    from pathlib import Path as P
+    inputpath = P(inputpath).expanduser().resolve()
+    outputpath = P(outputpath).expanduser().resolve()
+
     tgt_sr, audio_opt, times, _ = vc.vc_inference(
         sid,
-        inputpath,
+        str(inputpath),
         f0upkey,
         f0method,
-        f0file,
-        indexfile,
+        str(f0file) if f0file else None,
+        str(indexfile) if indexfile else None,
         indexrate,
         filterradius,
         resamplesr,
