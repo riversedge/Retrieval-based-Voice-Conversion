@@ -331,10 +331,9 @@ class MultiHeadAttention(nn.Module):
         """
         batch, heads, length, _ = x.size()
         # Concat columns of pad to shift from relative to absolute indexing.
-        x = F.pad(
-            x,
-            #   commons.convert_pad_shape([[0, 0], [0, 0], [0, 0], [0, 1]])
-            [0, 1, 0, 0, 0, 0, 0, 0],
+        x = torch.cat(
+            [x, x.new_zeros(batch, heads, length, 1)],
+            dim=3,
         )
 
         # Concat extra elements so to add up to shape (len+1, 2*len-1).
@@ -358,10 +357,9 @@ class MultiHeadAttention(nn.Module):
         """
         batch, heads, length, _ = x.size()
         # padd along column
-        x = F.pad(
-            x,
-            # commons.convert_pad_shape([[0, 0], [0, 0], [0, 0], [0, int(length) - 1]])
-            [0, int(length) - 1, 0, 0, 0, 0, 0, 0],
+        x = torch.cat(
+            [x, x.new_zeros(batch, heads, length, int(length) - 1)],
+            dim=3,
         )
         x_flat = x.view([batch, heads, int(length**2) + int(length * (length - 1))])
         # add 0's in the beginning that will skew the elements after reshape
