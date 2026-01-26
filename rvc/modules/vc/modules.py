@@ -1,4 +1,5 @@
 import logging
+import os
 import traceback
 from collections import OrderedDict
 from io import BytesIO
@@ -44,9 +45,9 @@ class VC:
             to_return_protect[1] if self.if_f0 != 0 and to_return_protect else 0.33,
         ]
 
-        if hasattr(sid, "name"):
-            sid = sid.name
-        elif not isinstance(sid, str):
+        if isinstance(sid, (str, Path)):
+            sid = os.fspath(sid)
+        else:
             raise RuntimeError(f"pathlib.Path or str expected for sid. Got {type(sid)}")
 
         weight_root = os.getenv("weight_root")
@@ -111,38 +112,37 @@ class VC:
     ):
         if hubert_path is None:
             hubert_path = os.getenv("hubert_path")
-        elif hasattr(hubert_path, "name"):
-            hubert_path = hubert_path.name
-        elif not isinstance(hubert_path, str):
+        elif isinstance(hubert_path, (str, Path)):
+            hubert_path = os.fspath(hubert_path)
+        else:
             raise RuntimeError(f"pathlib.Path, str, or None expected for hubert_path. Got {type(hubert_path)}")
         
         if hubert_path is None or not os.path.exists(hubert_path):
             raise FileNotFoundError("hubert_path not found.")
 
-        if hasattr(input_audio_path, "name"):
-            input_audio_path = input_audio_path.name
-        elif not isinstance(input_audio_path, str):
+        if isinstance(input_audio_path, (str, Path)):
+            input_audio_path = os.fspath(input_audio_path)
+        else:
             raise RuntimeError(f"pathlib.Path or str expected for input_audio_path. Got {type(input_audio_path)}")
-        
-        print("DEBUG input_audio_path:", repr(input_audio_path), type(input_audio_path))
+
         if not os.path.exists(input_audio_path):
             raise FileNotFoundError("input_audio_path not found.")
         
-        if isinstance(f0_file, str):
+        if f0_file is not None:
+            if not isinstance(f0_file, (str, Path)):
+                raise RuntimeError(f"pathlib.Path, str, or None expected for f0_file. Got {type(f0_file)}")
             f0_file = Path(f0_file)
-        elif not isinstance(f0_file, Path) and f0_file is not None:
-            raise RuntimeError(f"pathlib.Path, str, or None expected for f0_file. Got {type(f0_file)}")
-        
-        if hasattr(f0_file, "name") and not os.path.exists(f0_file.name):
+
+        if f0_file is not None and not f0_file.exists():
             logger.warning("f0_file not found. Will use None instead.")
             f0_file = None
         
-        if hasattr(index_file, "name"):
-            index_file = index_file.name
-        elif not isinstance(index_file, str) and index_file is not None:
-            raise RuntimeError(f"pathlib.Path, str, or None expected for index_file. Got {type(index_file)}")
-        
-        if index_file is not None and not os.path.exists(index_file):
+        if index_file is not None:
+            if not isinstance(index_file, (str, Path)):
+                raise RuntimeError(f"pathlib.Path, str, or None expected for index_file. Got {type(index_file)}")
+            index_file = Path(index_file)
+
+        if index_file is not None and not index_file.exists():
             logger.warning("index_file not found. Will use None instead.")
             index_file = None
 
@@ -203,12 +203,12 @@ class VC:
         output_format: str = "wav",
         hubert_path: str | Path | None = None,
     ):
-        if hasattr(opt_root, "name"):
-            opt_root = opt_root.name
+        if isinstance(opt_root, (str, Path)):
+            opt_root = os.fspath(opt_root)
 
         try:
             os.makedirs(opt_root, exist_ok=True)
-            paths = [path.name if hasattr(path, "name") else path for path in paths]
+            paths = [os.fspath(path) for path in paths]
             infos = []
             for path in paths:
                 tgt_sr, audio_opt, _, info = self.vc_inference(
