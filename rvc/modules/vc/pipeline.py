@@ -269,6 +269,10 @@ class Pipeline(object):
         del feats, p_len, padding_mask
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            # MPS doesn't require explicit cache clearing, but we can do a garbage collection
+            import gc
+            gc.collect()
         t2 = ttime()
         times["npy"] += t1 - t0
         times["infer"] += t2 - t1
@@ -451,4 +455,8 @@ class Pipeline(object):
         del pitch, pitchf, sid
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            # MPS doesn't require explicit cache clearing, but we can do a garbage collection
+            import gc
+            gc.collect()
         return audio_opt

@@ -182,12 +182,12 @@ class Config:
         if torch.cuda.is_available():
             self.use_cuda()
         elif self.has_mps():
-            logger.info("No supported Nvidia GPU found")
+            logger.info("No supported Nvidia GPU found, using MPS")
             self.use_mps()
         elif self.dml:
             self.use_dml()
         else:
-            logger.info("No supported Nvidia GPU found")
+            logger.info("No supported GPU found, using CPU")
             self.device = self.instead = "cpu"
             self.is_half = False
             self.use_fp32_config()
